@@ -16,19 +16,14 @@ cartRouter.post('/add', async (req, res) => {
         return;
     }
     try {
-        let count = 1;
         const product = await Product.findOne({ productName: productName });
         if (product) {
             if (product.quantity > 0) {
                 const availCart = await Cart.findOne({ productName: product.productName });
                 product.quantity = product.quantity - 1;
                 if (availCart) {
-                    const cartData = await Cart.findOneAndUpdate({ productName: availCart.productName }, {
-
-                        quantity: ++count
-                    })
-                    console.log(cartData.quantity);
-                    await cartData.save();
+                    availCart.quantity = availCart.quantity + 1;
+                    await availCart.save();
                 }
                 else {
                     const cartData = new Cart({
@@ -73,10 +68,10 @@ cartRouter.get('/', async (req, res) => {
 
 
 cartRouter.delete('/delete', async (req, res) => {
-    const productName = req.body.productName;
+    const productName = req.query.productName;
     try {
         const cartItem = await Cart.findOne({ productName: productName });
-        const productItem = await Product.findOne({ productName: productName });
+        const count = 0;
         if (cartItem) {
             if (cartItem.quantity === 1) {
                 await Cart.findOneAndDelete({ productName: productName });
@@ -84,9 +79,11 @@ cartRouter.delete('/delete', async (req, res) => {
             }
             else {
                 cartItem.quantity = cartItem.quantity - 1;
-                productItem.quantity = productItem.quantity - 1;
+                const productItem = await Product.findOne({ productName: productName });
+                productItem.quantity = productItem.quantity + 1;
                 await cartItem.save();
                 await productItem.save();
+                res.status(200).json(AppUtils.generateSuccess("REMOVE ITEM", "Remove item"));
             }
         }
     } catch (err) {
